@@ -782,10 +782,9 @@ class VideoFix extends openfl.display.Bitmap
 		return false;
 	}
 
-	@:noCompletion override private function set_visible(value:Bool):Bool
+	override private function set_visible(value:Bool):Bool
 	{
 		if (value == false) {
-			//visible = true;
 			alpha = 0;
 		}
 		return true;
