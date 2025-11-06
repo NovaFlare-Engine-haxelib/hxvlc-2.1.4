@@ -65,7 +65,8 @@ class FlxVideo extends Video
 		// Error mapping to original handler
 		onEncounteredError.add(function(err:String):Void
 		{
-			onVLCError();
+			//新版没有onVLCError回调
+			throw "VLC caught an error! $err";
 		});
 
 		FlxG.addChildBelowMouse(this);
@@ -137,7 +138,7 @@ class FlxVideo extends Video
 
 	public function finishVideo()
 	{
-		if (FlxG.sound.music != null && pauseMusic)
+		if (FlxG.sound.music != null)
 			FlxG.sound.music.resume();
 
 		FlxG.stage.removeEventListener(Event.ENTER_FRAME, update);
@@ -147,9 +148,6 @@ class FlxVideo extends Video
 		if (FlxG.game.contains(this))
 		{
 			FlxG.game.removeChild(this);
-
-			if (finishCallback != null)
-				finishCallback();
 		}
 	}
 

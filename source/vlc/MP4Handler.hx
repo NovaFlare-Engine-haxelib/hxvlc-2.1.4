@@ -16,7 +16,7 @@ using StringTools;
 
 //hxcodec 2.5.0-2.5.1
 
-class VideoHandler extends Video
+class MP4Handler extends Video
 {
 	public var readyCallback:Void->Void;
 	public var finishCallback:Void->Void;
