@@ -1,4 +1,4 @@
-package hxcodec.flixel;
+package;
 
 import flixel.FlxG;
 import flixel.util.FlxTimer;
@@ -14,14 +14,24 @@ import sys.FileSystem;
 
 using StringTools;
 
-class FlxVideo extends Video
-{
-	public var readyCallback:Void->Void;
-	public var finishCallback:Void->Void;
+//hxcodec 2.6.0-2.6.1
 
-	var pauseMusic:Bool;
-	private var shouldRepeat:Bool = false;
+class VideoHandler extends Video
+{
 	private var resumeOnFocus:Bool = false;
+
+	//下面的才是hxcodec的变量
+
+	public var canSkip:Bool = true;
+	public var skipKeys:Array<FlxKey> = [FlxKey.SPACE];
+	public var canUseSound:Bool = true;
+	public var canUseAutoResize:Bool = true; //废弃
+
+	public var openingCallback:Void->Void = null;
+	public var finishCallback:Void->Void = null;
+
+	private var pauseMusic:Bool = false;
+	private var shouldRepeat:Bool = false;
 
 	public function new(width:Float = 320, height:Float = 240, autoScale:Bool = true)
 	{
@@ -47,8 +57,7 @@ class FlxVideo extends Video
 			#end
 
 			// Keep original ready callback contract
-			if (readyCallback != null)
-				readyCallback();
+			onVLCVideoReady();
 		});
 
 		// Finish on end reached when not repeating
@@ -79,12 +88,17 @@ class FlxVideo extends Video
 
 	function update(e:Event)
 	{
-		if ((FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE) && isPlaying)
+		#if FLX_KEYBOARD
+		if (canSkip && (FlxG.keys.anyJustPressed(skipKeys) #if android || FlxG.android.justReleased.BACK #end) && isPlaying)
 			finishVideo();
+		#elseif android
+		if (canSkip && FlxG.android.justReleased.BACK && isPlaying)
+			finishVideo();
+		#end
 
 		// Let FlxInternalVideo volume mapping drive actual volume; this keeps legacy behavior for non-FLX_SOUND_SYSTEM
 		#if !(FLX_SOUND_SYSTEM)
-		if (FlxG.sound.muted || FlxG.sound.volume <= 0)
+		if (FlxG.sound.muted || FlxG.sound.volume <= 0 || !canUseSound)
 			volume = 0;
 		else
 			volume = Math.floor((FlxG.sound.volume + 0.4) * 100);
@@ -92,6 +106,7 @@ class FlxVideo extends Video
 	}
 
 	// Path/asset resolution ported from FlxInternalVideo.load
+	// repeat同等于loop
 	public function playVideo(path:String, ?repeat:Bool = false, pauseMusic:Bool = false)
 	{
 		this.pauseMusic = pauseMusic;
@@ -170,8 +185,8 @@ class FlxVideo extends Video
 	function onVLCVideoReady()
 	{
 		trace("Video loaded!");
-		if (readyCallback != null)
-			readyCallback();
+		if (openingCallback != null)
+			openingCallback();
 	}
 
 	function onVLCError()

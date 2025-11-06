@@ -1,4 +1,4 @@
-package vlc;
+package hxcodec.flixel;
 
 import flixel.FlxG;
 import flixel.util.FlxTimer;
@@ -14,16 +14,14 @@ import sys.FileSystem;
 
 using StringTools;
 
-//hxcodec 2.5.0-2.5.1
+//hxcodec 3.0.0
 
-class VideoHandler extends Video
+class FlxVideo extends Video
 {
-	public var readyCallback:Void->Void;
-	public var finishCallback:Void->Void;
-
-	private var pauseMusic:Bool;
-	private var shouldRepeat:Bool = false;
 	private var resumeOnFocus:Bool = false;
+
+	//下面的才是hxcodec的变量
+	private var shouldRepeat:Bool = false;
 
 	public function new(width:Float = 320, height:Float = 240, autoScale:Bool = true)
 	{
@@ -47,9 +45,6 @@ class VideoHandler extends Video
 			if (!FlxG.signals.postUpdate.has(onVolumeUpdate))
 				FlxG.signals.postUpdate.add(onVolumeUpdate);
 			#end
-
-			// Keep original ready callback contract
-			onVLCVideoReady();
 		});
 
 		// Finish on end reached when not repeating
@@ -80,26 +75,17 @@ class VideoHandler extends Video
 
 	function update(e:Event)
 	{
-		if ((FlxG.keys.justPressed.ENTER || FlxG.keys.justPressed.SPACE) && isPlaying)
-			finishVideo();
-
 		// Let FlxInternalVideo volume mapping drive actual volume; this keeps legacy behavior for non-FLX_SOUND_SYSTEM
 		#if !(FLX_SOUND_SYSTEM)
-		if (FlxG.sound.muted || FlxG.sound.volume <= 0)
-			volume = 0;
-		else
-			volume = Math.floor((FlxG.sound.volume + 0.4) * 100);
+		volume = Std.int((FlxG.sound.muted ? 0 : 1) * (FlxG.sound.volume * 100));
 		#end
 	}
 
 	// Path/asset resolution ported from FlxInternalVideo.load
-	public function playVideo(path:String, ?repeat:Bool = false, pauseMusic:Bool = false)
+	// repeat同等于loop
+	public function play(path:String, ?repeat:Bool = false)
 	{
-		this.pauseMusic = pauseMusic;
 		this.shouldRepeat = repeat;
-
-		if (FlxG.sound.music != null && pauseMusic)
-			FlxG.sound.music.pause();
 
 		#if sys
 		var loaded:Bool = load(path);
@@ -165,19 +151,6 @@ class VideoHandler extends Video
 			if (finishCallback != null)
 				finishCallback();
 		}
-	}
-
-	// Legacy callbacks
-	function onVLCVideoReady()
-	{
-		trace("Video loaded!");
-		if (readyCallback != null)
-			readyCallback();
-	}
-
-	function onVLCError()
-	{
-		throw "VLC caught an error!";
 	}
 
 	// Focus/volume hooks from FlxInternalVideo
